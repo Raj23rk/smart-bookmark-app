@@ -22,6 +22,26 @@ export default function BookmarkForm({ userId, onSuccess }: Props) {
     return input
   }
 
+  const isValidUrl = (input: string) => {
+    try {
+      const parsed = new URL(input)
+
+      // Must be http or https
+      if (!["http:", "https:"].includes(parsed.protocol)) {
+        return false
+      }
+
+      // Must contain valid domain (like .com, .in etc)
+      if (!parsed.hostname.includes(".")) {
+        return false
+      }
+
+      return true
+    } catch {
+      return false
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -30,11 +50,16 @@ export default function BookmarkForm({ userId, onSuccess }: Props) {
       return
     }
 
+    const formattedUrl = formatUrl(url.trim())
+
+    if (!isValidUrl(formattedUrl)) {
+      setError("Please enter a valid website URL (example.com)")
+      return
+    }
+
     setError("")
     setSuccess("")
     setLoading(true)
-
-    const formattedUrl = formatUrl(url.trim())
 
     const { error } = await supabase.from("bookmarks").insert([
       {
@@ -50,9 +75,9 @@ export default function BookmarkForm({ userId, onSuccess }: Props) {
       setTitle("")
       setUrl("")
       setSuccess("Bookmark added successfully 🎉")
+
       if (onSuccess) await onSuccess()
 
-      // Auto-hide success message
       setTimeout(() => setSuccess(""), 2000)
     }
 
@@ -66,7 +91,6 @@ export default function BookmarkForm({ userId, onSuccess }: Props) {
     >
       <div className="flex flex-col gap-4">
 
-        {/* Title */}
         <input
           type="text"
           placeholder="Bookmark title"
@@ -75,7 +99,6 @@ export default function BookmarkForm({ userId, onSuccess }: Props) {
           className="p-3 rounded-lg bg-gray-900 text-white outline-none focus:ring-2 focus:ring-blue-500 transition"
         />
 
-        {/* URL */}
         <input
           type="text"
           placeholder="example.com"
@@ -84,17 +107,14 @@ export default function BookmarkForm({ userId, onSuccess }: Props) {
           className="p-3 rounded-lg bg-gray-900 text-white outline-none focus:ring-2 focus:ring-blue-500 transition"
         />
 
-        {/* Error Message */}
         {error && (
           <p className="text-red-400 text-sm">{error}</p>
         )}
 
-        {/* Success Message */}
         {success && (
           <p className="text-green-400 text-sm">{success}</p>
         )}
 
-        {/* Button */}
         <button
           type="submit"
           disabled={loading}
