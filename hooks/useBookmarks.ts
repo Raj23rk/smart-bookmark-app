@@ -19,9 +19,7 @@ export function useBookmarks(userId: string) {
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
 
-    if (error) {
-      console.error("Error fetching bookmarks:", error.message)
-    } else {
+    if (!error) {
       setBookmarks(data || [])
     }
 
@@ -29,8 +27,31 @@ export function useBookmarks(userId: string) {
   }, [userId])
 
   useEffect(() => {
+    if (!userId) return
+
     fetchBookmarks()
-  }, [fetchBookmarks])
+
+    // ✅ REALTIME SUBSCRIPTION
+    const channel = supabase
+      .channel("bookmarks-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "bookmarks",
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          fetchBookmarks() // 🔥 auto refresh when change happens
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [userId, fetchBookmarks])
 
   return {
     bookmarks,

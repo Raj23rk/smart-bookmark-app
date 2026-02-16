@@ -13,7 +13,12 @@ export default function DashboardPage() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
-  const { bookmarks, fetchBookmarks } = useBookmarks(user?.id || "")
+  // ✅ Proper null handling
+  const {
+    bookmarks,
+    loading: bookmarksLoading,
+    fetchBookmarks,
+  } = useBookmarks(user?.id ?? null)
 
   useEffect(() => {
     const getUser = async () => {
@@ -33,7 +38,7 @@ export default function DashboardPage() {
     getUser()
   }, [router])
 
-  // ✅ Loading Screen (Center Animated Loader)
+  // ✅ Dashboard Loading Screen
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
@@ -61,28 +66,39 @@ export default function DashboardPage() {
 
       {/* Content */}
       <div className="relative z-10 text-white p-6">
-        <div className="max-w-3xl mx-auto backdrop-blur-xl bg-white/10 p-8 rounded-2xl shadow-2xl border border-white/20">
+        <div className="max-w-3xl mx-auto backdrop-blur-xl bg-white/10 p-10 rounded-3xl shadow-2xl border border-white/20 space-y-6">
 
           {/* Header */}
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold tracking-wide">
-              My Bookmarks
-            </h1>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold tracking-wide">
+                My Bookmarks
+              </h1>
+              <p className="text-gray-300 text-sm mt-1">
+                Manage your saved links securely in real-time.
+              </p>
+            </div>
             <LogoutButton />
           </div>
 
-          {/* Add Form */}
+          {/* Add Bookmark Form */}
           <BookmarkForm
             userId={user.id}
             onSuccess={fetchBookmarks}
           />
 
-          {/* List */}
-          <div className="mt-6">
-            <BookmarkList
-              bookmarks={bookmarks}
-              onDeleteSuccess={fetchBookmarks}
-            />
+          {/* Bookmark List Section */}
+          <div>
+            {bookmarksLoading ? (
+              <div className="flex justify-center mt-6">
+                <div className="w-8 h-8 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              <BookmarkList
+                bookmarks={bookmarks}
+                onDeleteSuccess={fetchBookmarks}
+              />
+            )}
           </div>
 
         </div>
